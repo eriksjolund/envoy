@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-  conn = psycopg2.connect("host=postgres user=postgres")
+  conn = psycopg2.connect("host=proxy-postgres-frontend user=postgres")
   cur = conn.cursor()
   cur.execute('SELECT version()')
   msg = 'Connected to Postgres, version: %s' % cur.fetchone()

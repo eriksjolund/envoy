@@ -33,8 +33,6 @@ services:
     networks:
       postgres-backend:
       postgres-in-between:
-        aliases:
-        - proxy-postgres-backend.example.com
 
   postgres-1:
     image: postgres:12

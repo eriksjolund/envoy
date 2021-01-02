@@ -9,16 +9,19 @@ static_resources:
     - name: "envoy.filters.listener.tls_inspector"
       typed_config: {}
     filter_chains:
-    - filters:
+    - filter_chain_match:
+        server_names:
+        - proxy-postgres-backend-1.example.com
+      filters:
       - name: envoy.filters.network.postgres_proxy
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.network.postgres_proxy.v3alpha.PostgresProxy
-          stat_prefix: egress_postgres
+          stat_prefix: egress_postgres1
       - name: envoy.filters.network.tcp_proxy
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
-          stat_prefix: postgres_tcp
-          cluster: postgres_cluster
+          stat_prefix: postgres_tcp1
+          cluster: postgres_cluster1
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:
@@ -27,25 +30,65 @@ static_resources:
           common_tls_context:
             tls_certificates:
               certificate_chain:
-                filename: certs/servercert.pem
+                filename: certs/servercert-1.pem
               private_key:
                 filename: certs/serverkey.pem
             validation_context:
               match_subject_alt_names:
-              - exact: proxy-postgres-frontend.example.com
+              - exact: proxy-postgres-frontend-1.example.com
               trusted_ca:
                 filename: certs/cacert.pem
-
+    - filter_chain_match:
+        server_names:
+        - proxy-postgres-backend-2.example.com
+      filters:
+      - name: envoy.filters.network.postgres_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.postgres_proxy.v3alpha.PostgresProxy
+          stat_prefix: egress_postgres
+      - name: envoy.filters.network.tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+          stat_prefix: postgres_tcp2
+          cluster: postgres_cluster2
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          require_client_certificate: true
+          common_tls_context:
+            tls_certificates:
+              certificate_chain:
+                filename: certs/servercert-2.pem
+              private_key:
+                filename: certs/serverkey.pem
+            validation_context:
+              match_subject_alt_names:
+              - exact: proxy-postgres-frontend-2.example.com
+              trusted_ca:
+                filename: certs/cacert.pem
   clusters:
-  - name: postgres_cluster
+  - name: postgres_cluster1
     connect_timeout: 1s
     type: strict_dns
     load_assignment:
-      cluster_name: postgres_cluster
+      cluster_name: postgres_cluster1
       endpoints:
       - lb_endpoints:
         - endpoint:
             address:
               socket_address:
-                address: postgres
+                address: postgres-1
+                port_value: 5432
+  - name: postgres_cluster2
+    connect_timeout: 1s
+    type: strict_dns
+    load_assignment:
+      cluster_name: postgres_cluster2
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: postgres-2
                 port_value: 5432

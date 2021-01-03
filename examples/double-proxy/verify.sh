@@ -16,35 +16,29 @@ openssl req -batch -x509 -new -nodes -key certs/ca.key -sha256 -days 1024 -out c
 run_log "Create a domain key"
 openssl genrsa -out certs/example.com.key 2048
 
-run_log "Generate signing requests for each proxy"
-openssl req -new -sha256 \
+generate_csr_and_crt() {
+  run_log "Generate signing request for the proxy $1"
+  openssl req -new -sha256 \
 	-key certs/example.com.key \
-	-subj "/C=US/ST=CA/O=MyExample, Inc./CN=proxy-postgres-frontend.example.com" \
-	-out certs/proxy-postgres-frontend.example.com.csr
-openssl req -new -sha256 \
-	-key certs/example.com.key \
-	-subj "/C=US/ST=CA/O=MyExample, Inc./CN=proxy-postgres-backend.example.com" \
-	-out certs/proxy-postgres-backend.example.com.csr
+	-subj "/C=US/ST=CA/O=MyExample, Inc./CN=$1" \
+	-out certs/$1.csr
 
-run_log "Generate certificates for each proxy"
-openssl x509 -req \
-	-in certs/proxy-postgres-frontend.example.com.csr \
+  run_log "Generate certificates for the proxy $1"
+  openssl x509 -req \
+	-in certs/$1.csr \
 	-CA certs/ca.crt \
 	-CAkey certs/ca.key \
 	-CAcreateserial \
-	-extfile <(printf "subjectAltName=DNS:proxy-postgres-frontend.example.com") \
-	-out certs/postgres-frontend.example.com.crt \
+	-extfile <(printf "subjectAltName=DNS:$1") \
+	-out certs/$1.crt \
 	-days 500 \
 	-sha256
-openssl x509 -req \
-	-in certs/proxy-postgres-backend.example.com.csr \
-	-CA certs/ca.crt \
-	-CAkey certs/ca.key \
-	-CAcreateserial \
-	-extfile <(printf "subjectAltName=DNS:proxy-postgres-backend.example.com") \
-	-out certs/postgres-backend.example.com.crt \
-	-days 500 \
-	-sha256
+}
+
+generate_csr_and_crt proxy-postgres-frontend-1.example.com
+generate_csr_and_crt proxy-postgres-frontend-2.example.com
+generate_csr_and_crt proxy-postgres-backend-1.example.com
+generate_csr_and_crt proxy-postgres-backend-2.example.com
 
 bring_up_example
 

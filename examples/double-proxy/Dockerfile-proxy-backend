@@ -2,8 +2,9 @@ FROM envoyproxy/envoy-dev:latest
 
 COPY ./envoy-backend.yaml /etc/envoy.yaml
 COPY ./certs/ca.crt /certs/cacert.pem
-COPY ./certs/postgres-backend.example.com.crt /certs/servercert.pem
+COPY ./certs/proxy-postgres-backend-1.example.com.crt /certs/servercert-1.pem
+COPY ./certs/proxy-postgres-backend-2.example.com.crt /certs/servercert-2.pem
 COPY ./certs/example.com.key /certs/serverkey.pem
 
-RUN chmod go+r /etc/envoy.yaml /certs/cacert.pem /certs/serverkey.pem /certs/servercert.pem
+RUN chmod go+r /etc/envoy.yaml /certs/cacert.pem /certs/serverkey.pem /certs/servercert-1.pem /certs/servercert-2.pem
 CMD ["/usr/local/bin/envoy", "-c /etc/envoy.yaml", "-l", "debug"]
